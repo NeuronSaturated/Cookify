@@ -1,21 +1,15 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
-        mavenCentral()
-        gradlePluginPortal()
+        google() // Repositorio de Google para Firebase y otros plugins
+        mavenCentral() // Repositorio de Maven Central
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        google()
-        mavenCentral()
+        google() // Asegura que Google esté en el repositorio
+        mavenCentral() // También Maven Central
     }
 }
 

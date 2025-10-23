@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="cl.goodhealthy.cookify" />
+                  <option name="mobileSdkAppId" value="1:482829961595:android:f32aa0419a985e118d15de" />
+                  <option name="projectId" value="cookify-app1" />
+                  <option name="projectNumber" value="482829961595" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
