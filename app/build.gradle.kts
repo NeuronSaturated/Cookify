@@ -77,6 +77,9 @@ dependencies {
     // Cargar imágenes por URL (Coil)
     implementation("io.coil-kt:coil-compose:2.7.0")
 
+    // Runtime para ViewModel (lo usa RecipesViewModel)
+    implementation("androidx.compose.runtime:runtime-saveable")
+
     // Iconos extendidos de Material
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
 

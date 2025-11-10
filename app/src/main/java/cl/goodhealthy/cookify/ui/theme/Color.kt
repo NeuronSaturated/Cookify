@@ -10,7 +10,7 @@ val CookifySurface      = Color(0xFFF7F6F2)   // crema (fondo)
 val CookifyOnSurface    = Color(0xFF222222)   // texto principal
 
 // Derivados / helpers (claro)
-val CookifyPrimarySoft  = CookifyPrimary.copy(alpha = 0.12f) // seleccionado en drawer
+val CookifyPrimarySoft  = CookifyPrimary.copy(alpha = 0.12f)        // seleccionado en drawer
 val CookifyCard         = Color(0xFFEFF2EA)                  // fondo suave de card
 val CookifyTime         = Color(0xFFFFE6CC)                  // píldora tiempo (fondo)
 val CookifyTimeOn       = Color(0xFFBF4E00)                  // píldora tiempo (texto/ícono)
@@ -20,3 +20,7 @@ val CookifyBackgroundDark   = Color(0xFF121212)
 val CookifySurfaceDark      = Color(0xFF1B1B1B)
 val CookifyOnSurfaceDark    = Color(0xFFEAEAEA)
 val CookifySurfaceVariantDark= Color(0xFF262626)
+
+
+// rojo del corazón
+val FavoriteRed   = Color(0xFFE53935)
