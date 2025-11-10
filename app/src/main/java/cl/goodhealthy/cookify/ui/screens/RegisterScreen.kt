@@ -1,18 +1,15 @@
 package cl.goodhealthy.cookify.ui.screens
 
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AlternateEmail
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,9 +35,20 @@ fun RegisterScreen(
     val cs = MaterialTheme.colorScheme
     val state by authVm.state.collectAsState()
 
+    // --- Estados de formulario ---
+    var displayName by remember { mutableStateOf("") }   // Nombre opcional
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var showPass by remember { mutableStateOf(false) }
+
+    // --- Validaciones con remember + derivedStateOf ---
+    val emailValid by remember(email) {
+        derivedStateOf {
+            email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+        }
+    }
+    val passValid by remember(pass) { derivedStateOf { pass.length >= 6 } }
+    val canSubmit by remember(emailValid, passValid) { derivedStateOf { emailValid && passValid } }
 
     Surface(color = cs.background, modifier = Modifier.fillMaxSize()) {
         Column(
@@ -79,6 +87,7 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(20.dp))
 
+            // Tabs
             AuthTabs(
                 selected = 1,
                 onLogin = {
@@ -92,10 +101,29 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(16.dp))
 
+            // ===== Nombre opcional =====
+            OutlinedTextField(
+                value = displayName,
+                onValueChange = { displayName = it },
+                label = { Text("Nombre de usuario (opcional)") },
+                leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null) },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(12.dp))
+
+            // ===== Email =====
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
+                isError = email.isNotBlank() && !emailValid,
                 label = { Text("Email") },
+                supportingText = {
+                    if (!emailValid && email.isNotBlank()) {
+                        Text("Ingresa un correo válido (ej: nombre@dominio.com)")
+                    }
+                },
                 leadingIcon = { Icon(Icons.Outlined.AlternateEmail, contentDescription = null) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
@@ -103,11 +131,20 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(12.dp))
 
-            // Contraseña con ojo toggle
+            // ===== Contraseña =====
             OutlinedTextField(
                 value = pass,
                 onValueChange = { pass = it },
+                isError = pass.isNotEmpty() && !passValid,
                 label = { Text("Contraseña") },
+                supportingText = {
+                    val msg = when {
+                        pass.isEmpty() -> "Mínimo 6 caracteres"
+                        !passValid -> "La contraseña es demasiado corta"
+                        else -> null
+                    }
+                    if (msg != null) Text(msg)
+                },
                 leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
                 trailingIcon = {
                     IconButton(onClick = { showPass = !showPass }) {
@@ -117,23 +154,25 @@ fun RegisterScreen(
                         )
                     }
                 },
-                singleLine = true,
                 visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+                singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(Modifier.height(18.dp))
 
+            // ===== Botón Crear Cuenta =====
             Button(
-                onClick = { authVm.signUp(email.trim(), pass) },
-                enabled = email.isNotBlank() && pass.length >= 6,
+                onClick = { authVm.signUp(email.trim(), pass, displayName.ifBlank { null }) },
+                enabled = canSubmit && !state.loading,
                 shape = RoundedCornerShape(22.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
             ) { Text("Crear Cuenta") }
 
+            // Errores backend
             state.error?.let {
                 Spacer(Modifier.height(10.dp))
                 Text(it, color = MaterialTheme.colorScheme.error)

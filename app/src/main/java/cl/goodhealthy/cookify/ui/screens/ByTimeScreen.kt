@@ -47,8 +47,8 @@ fun ByTimeScreen(
             items(results, key = { it.id }) { r ->
                 RecipeCard(
                     recipe = r,
-                    isFav = r.id in favs,
-                    onFav = { vm.toggleFavorite(r.id) },
+                    isFavorite = r.id in favs,
+                    onToggleFavorite = { vm.toggleFavorite(id = r.id) },
                     onOpen = { nav.navigate("detail/${r.id}") }
                 )
             }

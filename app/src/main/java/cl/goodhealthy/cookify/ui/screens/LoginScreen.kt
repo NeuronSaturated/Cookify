@@ -1,8 +1,8 @@
 package cl.goodhealthy.cookify.ui.screens
 
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -42,6 +42,15 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var showPass by remember { mutableStateOf(false) }
+
+    // Validaciones (coinciden con Register)
+    val emailValid by remember(email) {
+        derivedStateOf {
+            email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+        }
+    }
+    val passValid by remember(pass) { derivedStateOf { pass.length >= 6 } }
+    val canSubmit by remember(emailValid, passValid) { derivedStateOf { emailValid && passValid } }
 
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -107,7 +116,13 @@ fun LoginScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
+                isError = email.isNotBlank() && !emailValid,
                 label = { Text("Email") },
+                supportingText = {
+                    if (!emailValid && email.isNotBlank()) {
+                        Text("Ingresa un correo válido (ej: nombre@dominio.com)")
+                    }
+                },
                 leadingIcon = { Icon(Icons.Outlined.AlternateEmail, contentDescription = null) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
@@ -119,7 +134,16 @@ fun LoginScreen(
             OutlinedTextField(
                 value = pass,
                 onValueChange = { pass = it },
+                isError = pass.isNotEmpty() && !passValid,
                 label = { Text("Contraseña") },
+                supportingText = {
+                    val msg = when {
+                        pass.isEmpty() -> "Mínimo 6 caracteres"
+                        !passValid -> "La contraseña es demasiado corta"
+                        else -> null
+                    }
+                    if (msg != null) Text(msg)
+                },
                 leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
                 trailingIcon = {
                     IconButton(onClick = { showPass = !showPass }) {
@@ -148,7 +172,7 @@ fun LoginScreen(
 
             Button(
                 onClick = { authVm.signIn(email.trim(), pass) },
-                enabled = email.isNotBlank() && pass.length >= 6,
+                enabled = canSubmit && !state.loading,
                 shape = RoundedCornerShape(22.dp),
                 modifier = Modifier
                     .fillMaxWidth()

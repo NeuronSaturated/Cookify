@@ -8,15 +8,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 // ========= Light =========
-// crema #FFFDF6 de fondo y cards blancas
+// Ahora: FONDO BLANCO y las CARDS color crema para mayor contraste (como el mockup)
 private val LightColors = lightColorScheme(
     primary = CookifyPrimary,
     onPrimary = Color.White,
     secondary = CookifySecondary,
 
-    background = CookifySurface,          // #FFFDF6
-    surface = CookifySurface,             // contenedores base
-    surfaceVariant = CookifyCard,         // cards blancas
+    // 👇 Invertimos: fondo blanco; contenedores base blancos; CARDS = crema
+    background = Color.White,            // fondo general
+    surface = Color.White,               // contenedores de nivel base (pantallas, barras)
+    surfaceVariant = CookifySurface,     // "cards" y bloques contrastados (crema #FFFDF6)
 
     onSurface = CookifyOnSurface,
     onSurfaceVariant = CookifyOnSurface,
@@ -26,21 +27,19 @@ private val LightColors = lightColorScheme(
     onSecondaryContainer = CookifyTimeOn,
 )
 
-// ========= Dark =========
-// fondo oscuro real y cards gris oscuro para contraste
+// ========= Dark ========= (sin cambios relevantes)
 private val DarkColors = darkColorScheme(
     primary = CookifyPrimary,
     onPrimary = Color.White,
     secondary = CookifySecondary,
 
-    background = CookifyBackgroundDark,   // p.ej. #121212
-    surface = CookifySurfaceDark,         // p.ej. #1B1B1B
-    surfaceVariant = CookifySurfaceVariantDark, // p.ej. #262626
+    background = CookifyBackgroundDark,
+    surface = CookifySurfaceDark,
+    surfaceVariant = CookifySurfaceVariantDark,
 
-    onSurface = CookifyOnSurfaceDark,     // textos claros
+    onSurface = CookifyOnSurfaceDark,
     onSurfaceVariant = CookifyOnSurfaceDark,
 
-    // chip "tiempo": mantenemos la pastilla clara con texto oscuro
     secondaryContainer = CookifyTime,
     onSecondaryContainer = CookifyTimeOn,
 )

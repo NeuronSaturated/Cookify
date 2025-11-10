@@ -83,10 +83,11 @@ fun ByLetterScreen(vm: RecipesViewModel, nav: NavController) {
             if (query.isNotBlank()) {
                 // Resultados por búsqueda
                 itemsIndexed(filtered, key = { _, it -> it.id }) { _, r ->
+                    // 1) Cuando estás mostrando resultados filtrados por búsqueda:
                     RecipeCard(
                         recipe = r,
-                        isFav = r.id in favs,
-                        onFav = { vm.toggleFavorite(r.id) },
+                        isFavorite = r.id in favs,
+                        onToggleFavorite = { vm.toggleFavorite(id = r.id) },
                         onOpen = { nav.navigate("detail/${r.id}") }
                     )
                 }
@@ -105,10 +106,11 @@ fun ByLetterScreen(vm: RecipesViewModel, nav: NavController) {
                         Spacer(Modifier.height(6.dp))
                     }
                     itemsIndexed(list, key = { _, it -> it.id }) { _, r ->
+                        // 2) Dentro del bloque por letra (en el itemsIndexed de cada grupo):
                         RecipeCard(
                             recipe = r,
-                            isFav = r.id in favs,
-                            onFav = { vm.toggleFavorite(r.id) },
+                            isFavorite = r.id in favs,
+                            onToggleFavorite = { vm.toggleFavorite(id = r.id) },
                             onOpen = { nav.navigate("detail/${r.id}") }
                         )
                     }

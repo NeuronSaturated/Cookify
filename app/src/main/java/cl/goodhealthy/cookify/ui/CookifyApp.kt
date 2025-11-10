@@ -4,9 +4,30 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.TextFields
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -15,12 +36,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import cl.goodhealthy.cookify.R
-import cl.goodhealthy.cookify.ui.screens.*
+import cl.goodhealthy.cookify.ui.screens.ByLetterScreen
+import cl.goodhealthy.cookify.ui.screens.ByTimeScreen
+import cl.goodhealthy.cookify.ui.screens.DetailScreen
+import cl.goodhealthy.cookify.ui.screens.FavoritesScreen
+import cl.goodhealthy.cookify.ui.screens.HomeScreen
+import cl.goodhealthy.cookify.ui.screens.LoginScreen
+import cl.goodhealthy.cookify.ui.screens.RegisterScreen
+import cl.goodhealthy.cookify.ui.screens.SettingsScreen
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,8 +76,12 @@ fun CookifyApp(
                 startDestination = NavRoutes.LOGIN,
                 modifier = Modifier.padding(padding)
             ) {
-                composable(NavRoutes.LOGIN) { LoginScreen(nav = nav, authVm = authVm) }
-                composable(NavRoutes.REGISTER) { RegisterScreen(nav = nav, authVm = authVm) }
+                composable(NavRoutes.LOGIN) {
+                    LoginScreen(nav = nav, authVm = authVm)
+                }
+                composable(NavRoutes.REGISTER) {
+                    RegisterScreen(nav = nav, authVm = authVm)
+                }
             }
         }
         return
@@ -62,7 +96,8 @@ fun CookifyApp(
         DrawerItem("Configuración", NavRoutes.SETTINGS, Icons.Outlined.Settings),
     )
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
-    val selected = drawerItems.firstOrNull { currentRoute?.startsWith(it.route) == true } ?: drawerItems.first()
+    val selected =
+        drawerItems.firstOrNull { currentRoute?.startsWith(it.route) == true } ?: drawerItems.first()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -123,8 +158,7 @@ fun CookifyApp(
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
                 }
-
-                // Nota: "Cerrar sesión" se quitó del Drawer. Está solo en Configuración.
+                // Cerrar sesión se gestiona en Settings.
             }
         }
     ) {
@@ -145,22 +179,30 @@ fun CookifyApp(
                 startDestination = NavRoutes.HOME,
                 modifier = Modifier.padding(padding)
             ) {
-                composable(NavRoutes.HOME) { HomeScreen(vm, nav) }
-                composable(NavRoutes.FAVORITES) { FavoritesScreen(vm, nav) }
-                composable(NavRoutes.BY_TIME) { ByTimeScreen(vm, nav) }
-                composable(NavRoutes.BY_LETTER) { ByLetterScreen(vm, nav) }
+                // ===== App =====
+                composable(NavRoutes.HOME) { HomeScreen(vm = vm, nav = nav) }
+                composable(NavRoutes.FAVORITES) { FavoritesScreen(vm = vm, nav = nav) }
+                composable(NavRoutes.BY_TIME) { ByTimeScreen(vm = vm, nav = nav) }
+                composable(NavRoutes.BY_LETTER) { ByLetterScreen(vm = vm, nav = nav) }
                 composable(NavRoutes.SETTINGS) {
                     SettingsScreen(
                         authVm = authVm,
                         appSettingsVm = appSettingsVm
                     )
                 }
-                composable(route = NavRoutes.DETAIL) { backStack ->
+
+                // ===== Detalle con argumento {id} =====
+                composable(
+                    route = NavRoutes.DETAIL,
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.StringType }
+                    )
+                ) { backStack ->
                     val id = backStack.arguments?.getString("id") ?: return@composable
                     DetailScreen(
+                        nav = nav,
                         vm = vm,
-                        id = id,
-                        onBack = { nav.navigateUp() }    // antes tenías navController.navigateUp()
+                        recipeId = id
                     )
                 }
             }

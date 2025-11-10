@@ -15,17 +15,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel principal de recetas con sincronización de favoritos:
- * - Local persistente: DataStore (FavoritesDataStore)
- * - Remoto (opcional, si hay usuario logueado): Firestore
- *
- * Estrategia:
- *  1) Carga recetas.
- *  2) Colecciona DataStore -> _favorites (estado de UI).
- *  3) Si hay uid:
- *      - Merge 1 vez (local ∪ remoto) y setea en ambos lados.
- *      - Observa remoto y refleja en local solo si hay diferencia (evita bucles).
- *  4) toggleFavorite(): escribe local y remoto (si hay uid).
+ * ViewModel de recetas con:
+ * - Recetas desde assets (repo)
+ * - Favoritos persistentes (DataStore) + sincronización Firestore
+ * - Paginado simple para Home (lazy loading por tramos)
  */
 class RecipesViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -35,38 +28,46 @@ class RecipesViewModel(app: Application) : AndroidViewModel(app) {
     private val cloud = FirestoreFavorites()
     private val auth = FirebaseAuth.getInstance()
 
-    // --- Estado expuesto a la UI ---
+    // --- Estado base ---
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
     val recipes: StateFlow<List<Recipe>> = _recipes
 
     private val _favorites = MutableStateFlow<Set<String>>(emptySet())
     val favorites: StateFlow<Set<String>> = _favorites
 
+    // --- Paginado (Home) ---
+    private val pageSize = 10
+    private val _visibleRecipes = MutableStateFlow<List<Recipe>>(emptyList())
+    val visibleRecipes: StateFlow<List<Recipe>> = _visibleRecipes
+
+    private val _hasMore = MutableStateFlow(false)
+    val hasMore: StateFlow<Boolean> = _hasMore
+
     init {
         // 1) Cargar recetas (assets)
         _recipes.value = repo.getAll()
 
+        // Inicializar paginado (primer tramo)
+        resetPaging()
+
         // 2) Reflejar DataStore en estado UI
         viewModelScope.launch {
-            favStore.favoritesFlow.collect { ids ->
-                _favorites.value = ids
-            }
+            favStore.favoritesFlow.collect { ids -> _favorites.value = ids }
         }
 
         // 3) Si hay usuario, sincronizar con Firestore
         val uid = auth.currentUser?.uid
         if (uid != null) {
             viewModelScope.launch {
-                // ---- Merge inicial: local ∪ cloud ----
+                // Merge inicial: local ∪ cloud
                 val local = favStore.favoritesFlow.first()
                 val remote = cloud.getOnce(uid)
                 val union = (local + remote).toSet()
                 if (union != local) favStore.setAll(union)
                 if (union != remote) cloud.setAll(uid, union)
 
-                // ---- Escucha remota: refleja en local si cambia ----
+                // Escucha remota → refleja en local si cambia (evita bucles)
                 cloud.observe(uid).collect { remoteSet ->
-                    // Evita bucles: solo escribe si hay diferencia real
                     if (remoteSet != _favorites.value) {
                         favStore.setAll(remoteSet)
                     }
@@ -84,12 +85,7 @@ class RecipesViewModel(app: Application) : AndroidViewModel(app) {
     fun byFirstLetter(c: Char): List<Recipe> =
         _recipes.value.filter { it.title.trim().uppercase().startsWith(c.uppercaseChar()) }
 
-    // ---------- Acciones ----------
-    /**
-     * Alterna favorito:
-     * - Siempre actualiza local (DataStore) -> UI reacciona.
-     * - Si hay uid, replica en Firestore con operación atómica.
-     */
+    // ---------- Favoritos ----------
     fun toggleFavorite(id: String) {
         viewModelScope.launch {
             favStore.toggle(id) // local
@@ -97,5 +93,36 @@ class RecipesViewModel(app: Application) : AndroidViewModel(app) {
                 runCatching { cloud.toggle(uid, id) }
             }
         }
+    }
+
+    // ---------- Paginado (Home) ----------
+    /** Reinicia el paginado (útil si cambias la fuente o aplicas un filtro global). */
+    fun resetPaging() {
+        val all = _recipes.value
+        val first = all.take(pageSize)
+        _visibleRecipes.value = first
+        _hasMore.value = first.size < all.size
+    }
+
+    /** Carga el siguiente tramo de recetas si hay más. */
+    fun loadMore() {
+        val all = _recipes.value
+        val current = _visibleRecipes.value
+        if (current.size >= all.size) {
+            _hasMore.value = false
+            return
+        }
+        val nextEnd = (current.size + pageSize).coerceAtMost(all.size)
+        _visibleRecipes.value = all.subList(0, nextEnd)
+        _hasMore.value = nextEnd < all.size
+    }
+
+    /**
+     * Llámalo desde la UI cuando el usuario se acerque al final.
+     * Ej: si el último índice visible >= tamaño - 3, pedimos más.
+     */
+    fun loadMoreIfNearEnd(lastVisibleIndex: Int) {
+        val size = _visibleRecipes.value.size
+        if (lastVisibleIndex >= size - 3) loadMore()
     }
 }

@@ -1,201 +1,232 @@
 package cl.goodhealthy.cookify.ui.screens
 
-import androidx.compose.foundation.BorderStroke   // 👈 IMPORT NECESARIO
+// ===== Imports =====
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import cl.goodhealthy.cookify.ui.RecipesViewModel
 
-/**
- * Detalle de receta:
- * - Botón volver y favorito flotando sobre la imagen.
- * - Chip de tiempo junto al título.
- * - Secciones en cards blancas (surfaceVariant) con borde sutil para mejor contraste en modo claro.
- */
 @Composable
 fun DetailScreen(
+    nav: NavController,
     vm: RecipesViewModel,
-    id: String,
-    onBack: () -> Unit
+    recipeId: String
 ) {
-    val recipe = vm.getById(id) ?: return
+    val cs = MaterialTheme.colorScheme
+    val outline = cs.onSurface.copy(alpha = 0.12f)
+
+    val recipe = vm.getById(recipeId)
+    if (recipe == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Receta no encontrada", color = cs.onBackground)
+        }
+        return
+    }
+
+    // Observa favoritos correctamente
     val favs by vm.favorites.collectAsState()
     val isFav = recipe.id in favs
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
-        LazyColumn(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        // ===== Header compacto con imagen =====
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(
-                top = padding.calculateTopPadding(),
-                bottom = padding.calculateBottomPadding()
-            )
+                .fillMaxWidth()
+                .height(220.dp)
         ) {
-            // ---------- Imagen + botones flotantes ----------
-            item {
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(recipe.imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = recipe.title,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(220.dp)
-                            .clip(RoundedCornerShape(16.dp)),
-                        contentScale = ContentScale.Crop
+            AsyncImage(
+                model = recipe.imageUrl,
+                contentDescription = recipe.title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            // Scrim para legibilidad del título
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                                Color(0xAA000000)
+                            )
+                        )
                     )
+            )
 
-                    // Volver
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(10.dp),
-                        shape = CircleShape,
-                        tonalElevation = 3.dp,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                    ) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = "Volver",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    // Favorito
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(10.dp),
-                        shape = CircleShape,
-                        tonalElevation = 3.dp,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                    ) {
-                        IconButton(onClick = { vm.toggleFavorite(recipe.id) }) {
-                            Icon(
-                                imageVector = if (isFav) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                                contentDescription = "Favorito",
-                                tint = if (isFav) Color(0xFFE53935)
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+            // Botón volver (arriba-izquierda)
+            IconButton(
+                onClick = { nav.popBackStack() },
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .align(Alignment.TopStart)
+                    .clip(CircleShape)
+                    .background(cs.surface.copy(alpha = 0.9f))
+            ) {
+                Icon(Icons.Outlined.ArrowBack, contentDescription = "Volver")
             }
 
-            // ---------- Título + chip tiempo ----------
-            item {
+            // Botón favorito (arriba-derecha)
+            IconButton(
+                onClick = { vm.toggleFavorite(recipe.id) },
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .align(Alignment.TopEnd)
+                    .clip(CircleShape)
+                    .background(cs.surface.copy(alpha = 0.9f))
+            ) {
+                Icon(
+                    imageVector = if (isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favorito",
+                    tint = if (isFav) cs.primary else cs.onSurface
+                )
+            }
+
+            // Título y chips
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, end = 16.dp, bottom = 14.dp)
+            ) {
+                Text(
+                    recipe.title,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                )
+                Spacer(Modifier.height(6.dp))
+
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = recipe.title,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 12.dp)
-                    )
-
-                    TimeChip(minutes = (recipe.totalMinutes ?: 0L).toInt())
-                }
-                Spacer(Modifier.height(8.dp))
-            }
-
-            // ---------- Ingredientes ----------
-            item {
-                SectionCard(title = "Ingredientes", useWhiteCard = true) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        recipe.ingredients.forEach { ing ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(8.dp),
-                                    content = {}
-                                )
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    text = ing,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
+                    // Tiempo (Long? o Int?)
+                    recipe.totalMinutes?.let { m ->
+                        val minutesText = when (m) {
+                            is Long -> "${m} min"
+                            else -> "${m.toString()} min"
                         }
+                        AssistChip(
+                            onClick = {},
+                            label = { Text(minutesText, style = MaterialTheme.typography.labelMedium) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.AccessTime,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = cs.secondaryContainer,
+                                labelColor = cs.onSecondaryContainer,
+                                leadingIconContentColor = cs.onSecondaryContainer
+                            )
+                        )
                     }
                 }
             }
-
-            // ---------- Preparación ----------
-            item {
-                SectionCard(title = "Preparación", useWhiteCard = true) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        recipe.steps.forEachIndexed { index, step ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
-                                ) {
-                                    Text(
-                                        text = "${index + 1}",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                    )
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    text = step,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item { Spacer(Modifier.height(12.dp)) }
         }
+
+        Spacer(Modifier.height(12.dp))
+
+        // ===== Ingredientes =====
+        SectionCard(
+            title = "Ingredientes",
+            useWhiteCard = true
+        ) {
+            val items: List<String> = recipe.ingredients ?: emptyList()
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items.forEach { ingredient ->
+                    Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(cs.primary)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            ingredient,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = cs.onSurface
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // ===== Preparación =====
+        SectionCard(
+            title = "Preparación",
+            useWhiteCard = true
+        ) {
+            val steps: List<String> = recipe.steps ?: emptyList()
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                steps.forEachIndexed { index, step ->
+                    Row(verticalAlignment = Alignment.Top) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(cs.primary.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${index + 1}",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = cs.primary
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            step,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = cs.onSurface
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
     }
 }
-
-/* ===================== Helpers UI ===================== */
 
 @Composable
 private fun SectionCard(
@@ -204,42 +235,27 @@ private fun SectionCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
-    val container = if (useWhiteCard) cs.surfaceVariant else cs.surface
-    val border = if (useWhiteCard) BorderStroke(1.dp, cs.outline.copy(alpha = 0.15f)) else null
+    val container = if (useWhiteCard) cs.surface else cs.surfaceVariant
+    val border = BorderStroke(1.dp, cs.outline.copy(alpha = 0.15f))
 
-    Card(
+    Surface(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = container),
+        color = container,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
         border = border,
         modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = 16.dp)
             .fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = cs.onSurface
             )
             Spacer(Modifier.height(10.dp))
             content()
-        }
-    }
-}
-
-@Composable
-private fun TimeChip(minutes: Int, modifier: Modifier = Modifier) {
-    Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shape = RoundedCornerShape(12.dp),
-        modifier = modifier
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-        ) {
-            Text(text = "$minutes min", style = MaterialTheme.typography.labelMedium)
         }
     }
 }
