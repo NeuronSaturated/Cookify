@@ -1,57 +1,53 @@
 package cl.goodhealthy.cookify.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
-// Colores base (definidos en Color.kt)
-import cl.goodhealthy.cookify.ui.theme.CookifyPrimary
-import cl.goodhealthy.cookify.ui.theme.CookifyOnPrimary
-import cl.goodhealthy.cookify.ui.theme.CookifySecondary
-import cl.goodhealthy.cookify.ui.theme.CookifySurface
-import cl.goodhealthy.cookify.ui.theme.CookifyOnSurface
-import cl.goodhealthy.cookify.ui.theme.CookifyBackgroundDark
-import cl.goodhealthy.cookify.ui.theme.CookifySurfaceDark
-import cl.goodhealthy.cookify.ui.theme.CookifyOnSurfaceDark
-import cl.goodhealthy.cookify.ui.theme.CookifySurfaceVariantDark
-import cl.goodhealthy.cookify.ui.theme.CookifyTime
-import cl.goodhealthy.cookify.ui.theme.CookifyTimeOn
-
-// --- Claro: fondo crema, tarjetas blancas ---
+// ---------- Colores ----------
 private val LightColors = lightColorScheme(
     primary = CookifyPrimary,
-    onPrimary = CookifyOnPrimary,
+    onPrimary = Color.White,
     secondary = CookifySecondary,
 
-    background = CookifySurface,               // crema (fondo de la app)
-    surface = Color(0xFFFFFFFF),               // BLANCO para tarjetas, barras, etc.
-    onSurface = CookifyOnSurface,
-    surfaceVariant = Color(0xFFF1EFE9),        // sutil para chips y fondos internos
+    background = CookifySurface,   // crema #FFFDF6
+    surface = CookifySurface,      // crema
+    surfaceVariant = CookifyCard,  // blanco para Cards
 
-    // Para la píldora de tiempo (naranja)
-    tertiaryContainer = CookifyTime,
-    onTertiaryContainer = CookifyTimeOn
+    onSurface = CookifyOnSurface,
+    onSurfaceVariant = CookifyOnSurface,
 )
 
-// --- Oscuro: superficies oscuras con buen contraste ---
 private val DarkColors = darkColorScheme(
     primary = CookifyPrimary,
-    onPrimary = CookifyOnPrimary,
+    onPrimary = Color.White,
     secondary = CookifySecondary,
 
-    background = CookifyBackgroundDark,
-    surface = CookifySurfaceDark,
-    onSurface = CookifyOnSurfaceDark,
-    surfaceVariant = CookifySurfaceVariantDark,
+    // mantenemos la estética: fondo crema + cards blancas
+    background = CookifySurface,
+    surface = CookifySurface,
+    surfaceVariant = CookifyCard,
 
-    // Naranja atenuado para la píldora en oscuro
-    tertiaryContainer = Color(0xFF4A3623),
-    onTertiaryContainer = Color(0xFFFFD8B5)
+    onSurface = CookifyOnSurface,
+    onSurfaceVariant = CookifyOnSurface,
 )
 
+// ---------- Shapes (instancia) ----------
+private val CookifyShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small      = RoundedCornerShape(12.dp),
+    medium     = RoundedCornerShape(16.dp),
+    large      = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(24.dp)
+)
+
+// ---------- Theme ----------
 @Composable
 fun CookifyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -60,7 +56,8 @@ fun CookifyTheme(
     val colors = if (darkTheme) DarkColors else LightColors
     MaterialTheme(
         colorScheme = colors,
-        typography = Typography,
-        content = content
+        typography  = Typography,     // tu Typography de Type.kt
+        shapes      = CookifyShapes,  // <- ahora sí existe
+        content     = content
     )
 }
