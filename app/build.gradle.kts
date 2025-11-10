@@ -5,6 +5,8 @@ plugins {
 
     // Agregamos los plugins de Google Services
     //id("com.android.application")
+    //id("com.android.application")
+    //id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
 }
 
@@ -78,16 +80,27 @@ dependencies {
     // Iconos extendidos de Material
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
+    // ViewModel (lo usa AuthViewModel)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
+
+    // DataStore (para el tema oscuro)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+
     // JSON (para leer recipes_gourmet.json)
     implementation("com.google.code.gson:gson:2.13.2")
 
 
+
     // --- Firebase SDKs ---
     // Importa la BoM de Firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
 
     // Dependencias de Firebase SDK
-    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-analytics")
+
+    // (Opcional si después usas Google Sign-In)
+    // implementation("com.google.android.gms:play-services-auth:21.2.0")
 }

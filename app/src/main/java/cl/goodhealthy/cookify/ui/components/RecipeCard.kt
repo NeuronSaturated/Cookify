@@ -1,29 +1,16 @@
 package cl.goodhealthy.cookify.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,14 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import cl.goodhealthy.cookify.data.Recipe
-import cl.goodhealthy.cookify.ui.theme.CookifyCard
-import cl.goodhealthy.cookify.ui.theme.CookifyTime
-import cl.goodhealthy.cookify.ui.theme.CookifyTimeOn
 
-/**
- * Tarjeta de receta con imagen, título, favorito y
- * "píldora" de tiempo estilo mockup (naranja con cronómetro).
- */
 @Composable
 fun RecipeCard(
     recipe: Recipe,
@@ -50,16 +30,20 @@ fun RecipeCard(
     onOpen: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val cs = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(16.dp)
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = CookifyCard),
-        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cs.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, cs.onSurface.copy(alpha = 0.08f)), // ← FIX
+        shape = shape,
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(shape)
             .clickableWithoutRipple { onOpen() }
     ) {
         Column {
-            // Imagen superior
             AsyncImage(
                 model = recipe.imageUrl,
                 contentDescription = recipe.title,
@@ -69,7 +53,6 @@ fun RecipeCard(
                     .height(180.dp)
             )
 
-            // Título + corazón
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,18 +61,19 @@ fun RecipeCard(
             ) {
                 Text(
                     text = recipe.title,
+                    color = cs.onSurface,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = onFav) {
                     Icon(
                         imageVector = if (isFav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Favorito"
+                        contentDescription = "Favorito",
+                        tint = if (isFav) cs.primary else cs.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
 
-            // Píldora de tiempo (naranja)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -97,22 +81,21 @@ fun RecipeCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val mins = recipe.totalMinutes
-                if (mins != null) {
+                recipe.totalMinutes?.let { mins ->
                     AssistChip(
-                        onClick = { },
-                        label = { Text("${mins} min") },
+                        onClick = { /* no-op */ },
+                        label = { Text("$mins min") },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.AccessTime,
                                 contentDescription = null,
-                                tint = CookifyTimeOn,
                                 modifier = Modifier.size(16.dp)
                             )
                         },
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = CookifyTime,
-                            labelColor = CookifyTimeOn
+                            containerColor = cs.tertiaryContainer,
+                            labelColor = cs.onTertiaryContainer,
+                            leadingIconContentColor = cs.onTertiaryContainer
                         )
                     )
                 }
@@ -124,7 +107,6 @@ fun RecipeCard(
 }
 
 /* -------- util: clickable sin ripple -------- */
-
 @Composable
 private fun Modifier.clickableWithoutRipple(onClick: () -> Unit): Modifier = this
     .indication(remember { MutableInteractionSource() }, null)

@@ -1,16 +1,10 @@
 package cl.goodhealthy.cookify.ui
 
-// ==== IMPORTS NECESARIOS ====
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccessTime
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.TextFields
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,43 +21,54 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import cl.goodhealthy.cookify.R
 import cl.goodhealthy.cookify.ui.screens.*
-import cl.goodhealthy.cookify.ui.theme.*
-
-// 👇 IMPORTS QUE FALTABAN
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
-/**
- * Pantalla principal con Drawer, TopBar y NavHost.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CookifyApp(vm: RecipesViewModel) {
+fun CookifyApp(
+    vm: RecipesViewModel,
+    authVm: AuthViewModel,
+    appSettingsVm: AppSettingsViewModel
+) {
     val nav = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-
-    // 👇 scope para lanzar corrutinas desde Composables
     val scope = rememberCoroutineScope()
+    val cs = MaterialTheme.colorScheme
 
-    // Ítems del drawer
-    val items = listOf(
+    val authState by authVm.state.collectAsState()
+    val loggedIn = authState.user != null
+
+    // ======= FLUJO DE AUTENTICACIÓN (sin Drawer) =======
+    if (!loggedIn) {
+        Scaffold { padding ->
+            NavHost(
+                navController = nav,
+                startDestination = NavRoutes.LOGIN,
+                modifier = Modifier.padding(padding)
+            ) {
+                composable(NavRoutes.LOGIN) { LoginScreen(nav = nav, authVm = authVm) }
+                composable(NavRoutes.REGISTER) { RegisterScreen(nav = nav, authVm = authVm) }
+            }
+        }
+        return
+    }
+
+    // ======= APP AUTENTICADA (con Drawer) =======
+    val drawerItems = listOf(
         DrawerItem("Inicio", NavRoutes.HOME, Icons.Outlined.Home),
         DrawerItem("Favoritos", NavRoutes.FAVORITES, Icons.Outlined.FavoriteBorder),
         DrawerItem("Búsqueda por Tiempo", NavRoutes.BY_TIME, Icons.Outlined.AccessTime),
         DrawerItem("Filtrar por Letra", NavRoutes.BY_LETTER, Icons.Outlined.TextFields),
-        DrawerItem("Configuración", NavRoutes.SETTINGS, Icons.Outlined.Settings)
+        DrawerItem("Configuración", NavRoutes.SETTINGS, Icons.Outlined.Settings),
     )
-
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
-    val selected = items.firstOrNull { currentRoute?.startsWith(it.route) == true } ?: items[0]
+    val selected = drawerItems.firstOrNull { currentRoute?.startsWith(it.route) == true } ?: drawerItems.first()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(
-                drawerContainerColor = CookifySurface
-            ) {
-                // ===== Header del Drawer (logo + textos) =====
+            ModalDrawerSheet(drawerContainerColor = cs.surface) {
+                // Header del Drawer
                 Row(
                     modifier = Modifier
                         .padding(16.dp)
@@ -72,62 +77,54 @@ fun CookifyApp(vm: RecipesViewModel) {
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_cookify_logo),
-                        contentDescription = "Logotipo Cookify",
+                        contentDescription = "Cookify logo",
                         modifier = Modifier
                             .size(56.dp)
                             .clip(RoundedCornerShape(16.dp)),
                         contentScale = ContentScale.Crop
                     )
-
                     Spacer(Modifier.width(12.dp))
-
                     Column {
                         Text(
                             text = "Cookify",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = CookifyOnSurface
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = cs.onSurface
                         )
                         Text(
                             text = "Recetas deliciosas",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = CookifyOnSurface.copy(alpha = 0.7f)
-                            )
+                            style = MaterialTheme.typography.bodySmall,
+                            color = cs.onSurface.copy(alpha = 0.7f)
                         )
                     }
                 }
 
-                HorizontalDivider(
-                    color = CookifyOnSurface.copy(alpha = 0.1f),
-                    thickness = 1.dp
-                )
+                HorizontalDivider(color = cs.onSurface.copy(alpha = 0.1f))
 
                 Text(
-                    text = "Menú Principal",
+                    text = "Menú principal",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
-                    color = CookifyOnSurface.copy(alpha = 0.8f),
+                    color = cs.onSurface.copy(alpha = 0.8f),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                 )
 
-                // ===== Ítems del drawer =====
-                items.forEach { itx ->
+                drawerItems.forEach { item ->
                     NavigationDrawerItem(
-                        label = { Text(itx.label) },
-                        selected = selected.route == itx.route,
+                        label = { Text(item.label) },
+                        selected = selected.route == item.route,
                         onClick = {
-                            // 👇 IMPORTANTE: open/close dentro de una corrutina
                             scope.launch { drawerState.close() }
-                            nav.navigate(itx.route) {
+                            nav.navigate(item.route) {
                                 popUpTo(nav.graph.startDestinationId) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(itx.icon, contentDescription = itx.label) },
+                        icon = { Icon(item.icon, contentDescription = item.label) },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
                 }
+
+                // Nota: "Cerrar sesión" se quitó del Drawer. Está solo en Configuración.
             }
         }
     ) {
@@ -136,12 +133,7 @@ fun CookifyApp(vm: RecipesViewModel) {
                 TopAppBar(
                     title = { Text(selected.label) },
                     navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                // 👇 abrir el drawer en corrutina
-                                scope.launch { drawerState.open() }
-                            }
-                        ) {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Outlined.Menu, contentDescription = "Abrir menú")
                         }
                     }
@@ -157,17 +149,21 @@ fun CookifyApp(vm: RecipesViewModel) {
                 composable(NavRoutes.FAVORITES) { FavoritesScreen(vm, nav) }
                 composable(NavRoutes.BY_TIME) { ByTimeScreen(vm, nav) }
                 composable(NavRoutes.BY_LETTER) { ByLetterScreen(vm, nav) }
-                composable(NavRoutes.SETTINGS) { SettingsScreen() }
+                composable(NavRoutes.SETTINGS) {
+                    SettingsScreen(
+                        authVm = authVm,
+                        appSettingsVm = appSettingsVm
+                    )
+                }
                 composable(NavRoutes.DETAIL) { backStack ->
                     val id = backStack.arguments?.getString("id") ?: return@composable
-                    DetailScreen(vm, id)
+                    DetailScreen(vm = vm, id = id)
                 }
             }
         }
     }
 }
 
-// Modelo de ítem del Drawer
 data class DrawerItem(
     val label: String,
     val route: String,

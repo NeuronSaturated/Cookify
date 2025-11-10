@@ -5,29 +5,45 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import cl.goodhealthy.cookify.data.SettingsDataStore
+import cl.goodhealthy.cookify.ui.AppSettingsViewModel
+import cl.goodhealthy.cookify.ui.AuthViewModel
 import cl.goodhealthy.cookify.ui.CookifyApp
-import cl.goodhealthy.cookify.ui.NavRoutes
 import cl.goodhealthy.cookify.ui.RecipesViewModel
-import cl.goodhealthy.cookify.ui.screens.DetailScreen
-import cl.goodhealthy.cookify.ui.screens.HomeScreen
 import cl.goodhealthy.cookify.ui.theme.CookifyTheme
 
 class MainActivity : ComponentActivity() {
 
     private val vm: RecipesViewModel by viewModels()
+    private val authVm: AuthViewModel by viewModels()
+
+    // Importante: creamos AppSettingsViewModel con DataStore mediante un Factory
+    private val appSettingsVm: AppSettingsViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val ds = SettingsDataStore(applicationContext)
+                @Suppress("UNCHECKED_CAST")
+                return AppSettingsViewModel(ds) as T
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            CookifyTheme {
-                CookifyApp(vm)   // 👈 ahora todo cuelga del drawer + NavHost
+            val dark by appSettingsVm.darkTheme.collectAsState()
+
+            CookifyTheme(darkTheme = dark) {
+                CookifyApp(
+                    vm = vm,
+                    authVm = authVm,
+                    appSettingsVm = appSettingsVm
+                )
             }
         }
     }
