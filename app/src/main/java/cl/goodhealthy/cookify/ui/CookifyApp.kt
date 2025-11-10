@@ -155,9 +155,13 @@ fun CookifyApp(
                         appSettingsVm = appSettingsVm
                     )
                 }
-                composable(NavRoutes.DETAIL) { backStack ->
+                composable(route = NavRoutes.DETAIL) { backStack ->
                     val id = backStack.arguments?.getString("id") ?: return@composable
-                    DetailScreen(vm = vm, id = id)
+                    DetailScreen(
+                        vm = vm,
+                        id = id,
+                        onBack = { nav.navigateUp() }    // antes tenías navController.navigateUp()
+                    )
                 }
             }
         }
